@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Step 1: Get access token
+    // 1. Fetch access token
     const tokenRes = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=info@beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
@@ -27,12 +27,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Failed to get access token' })
     }
 
-    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/parcel-terminal', {
-  method: 'GET',
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-})
+    // 2. Fetch terminal list using correct endpoint
+    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/terminal?receiverCountryCode=LT', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
     if (!terminalsRes.ok) {
       const errorText = await terminalsRes.text()
@@ -45,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.setHeader('Access-Control-Allow-Origin', '*')
     return res.status(200).json(terminals)
+
   } catch (err: any) {
     console.error('Error fetching terminals:', err)
     return res.status(500).json({ error: err.message || 'Internal server error' })
