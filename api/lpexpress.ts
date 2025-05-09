@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Step 1: Get access token
-    const tokenRes = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
+    const tokenRes = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=info@beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
