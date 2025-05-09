@@ -27,13 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Failed to get access token' })
     }
 
-    // Step 2: Fetch LP EXPRESS terminals
-    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/reference/parcel-terminal', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/parcel-terminal', {
+  method: 'GET',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+})
 
     if (!terminalsRes.ok) {
       const errorText = await terminalsRes.text()
