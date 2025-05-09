@@ -10,29 +10,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Step 1: Get access token
-    const tokenResponse = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
+    const tokenRes = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     })
 
-    const tokenData = await tokenResponse.json()
-    const token = tokenData.access_token
+    const tokenJson = await tokenRes.json()
+    const token = tokenJson.access_token
 
-    // Step 2: Fetch terminal list
-    const terminalsResponse = await fetch('https://api-manosiuntos.post.lt/api/v2/reference/parcel-terminal', {
+    if (!token) {
+      console.error('Token fetch failed:', tokenJson)
+      return res.status(500).json({ error: 'Failed to get access token' })
+    }
+
+    // Step 2: Fetch LP EXPRESS terminals
+    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/reference/parcel-terminal', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     })
 
-    const terminals = await terminalsResponse.json()
+    if (!terminalsRes.ok) {
+      const errorText = await terminalsRes.text()
+      console.error('Terminal fetch failed:', terminalsRes.status, errorText)
+      return res.status(500).json({ error: 'Failed to fetch terminals' })
+    }
+
+    const terminals = await terminalsRes.json()
     res.setHeader('Access-Control-Allow-Origin', '*')
     return res.status(200).json(terminals)
   } catch (err: any) {
     console.error('Error fetching terminals:', err)
-    return res.status(500).json({ error: 'Internal server error' })
+    return res.status(500).json({ error: err.message || 'Internal server error' })
   }
 }
