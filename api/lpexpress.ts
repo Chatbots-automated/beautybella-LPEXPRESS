@@ -9,12 +9,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Step 1: Get access token
+    // Get access token
     const tokenRes = await fetch('https://api-manosiuntos.post.lt/oauth/token?grant_type=password&username=info@beautybyella.lt&password=Benukas1&scope=read%2Bwrite%2BAPI_CLIENT', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' }
     })
 
     const tokenJson = await tokenRes.json()
@@ -25,8 +23,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Failed to get access token' })
     }
 
-    // Step 2: Fetch LP EXPRESS terminals
-    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/reference/parcel-terminal', {
+    // Fetch LP EXPRESS terminals
+    const terminalsRes = await fetch('https://api-manosiuntos.post.lt/api/v2/terminal?receiverCountryCode=LT', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
