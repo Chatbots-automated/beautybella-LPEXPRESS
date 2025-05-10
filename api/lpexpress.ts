@@ -76,19 +76,29 @@ if (body.action === 'createSenderAddress') {
         console.log('📦 Creating parcel:', body)
 
         const parcelRes = await fetch(`${API_BASE}/api/v2/parcel`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            idRef: body.idRef,
-            plan: body.plan,
-            parcel: body.parcel,
-            receiver: body.receiver,
-            senderAddressId: body.senderAddressId,
-          }),
-        })
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    idRef: body.idRef,
+    plan: body.plan,
+    parcel: body.parcel,
+    receiver: body.receiver,
+    senderAddressId: body.senderAddressId,
+  }),
+})
+
+const result = await parcelRes.json()
+
+if (!parcelRes.ok) {
+  console.error('❌ Parcel creation failed:', result)
+  return res.status(parcelRes.status).json({ error: 'Parcel creation failed', details: result })
+}
+
+console.log('✅ Parcel creation response:', result)
+return res.status(parcelRes.status).json(result)
 
         const result = await parcelRes.json()
         console.log('✅ Parcel creation response:', result)
