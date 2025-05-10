@@ -24,22 +24,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log(`📥 Incoming ${req.method} request`);
     const token = await getAccessToken();
-    if (!token) return res.status(500).json({ error: 'Failed to get access token' });
+    if (!token) {
+      console.error('❌ Token fetch failed');
+      return res.status(500).json({ error: 'Failed to get access token' });
+    }
 
     if (req.method === 'GET') {
       const terminalsRes = await fetch(`${API_BASE}/api/v2/terminal?receiverCountryCode=LT`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const terminals = await terminalsRes.json();
+      console.log(`✅ Terminals fetched (${terminals.length})`);
       return res.status(200).json(terminals);
     }
 
     if (req.method === 'POST') {
       const body = req.body;
-      console.log('📨 POST body:', body);
+      console.log('📨 POST body:', JSON.stringify(body, null, 2));
 
       if (body.action === 'createSenderAddress') {
-        const resAddress = await fetch(`${API_BASE}/api/v2/address`, {
+        console.log('🏢 Creating sender address at:', `${API_BASE}/api/v2/address`);
+        const addressRes = await fetch(`${API_BASE}/api/v2/address`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -47,8 +52,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
           body: JSON.stringify(body.sender),
         });
-        const addressResult = await resAddress.json();
-        return res.status(resAddress.status).json(addressResult);
+
+        const addressResult = await addressRes.text(); // read raw to log errors
+        console.log(`📬 Sender address response code: ${addressRes.status}`);
+        console.log('📬 Sender address response body:', addressResult);
+
+        // Try parsing if possible
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(addressResult);
+        } catch {
+          parsedResult = { raw: addressResult };
+        }
+
+        return res.status(addressRes.status).json(parsedResult);
       }
 
       if (body.action === 'createParcel') {
@@ -73,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(parcelRes.status).json({ error: 'Parcel creation failed', details: parcelResult });
         }
 
-        console.log('✅ Parcel creation response:', parcelResult);
+        console.log('✅ Parcel created:', parcelResult);
         return res.status(parcelRes.status).json(parcelResult);
       }
 
@@ -95,6 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           method: 'GET',
           headers: { Authorization: `Bearer ${token}` },
         });
+
         const buffer = await labelRes.arrayBuffer();
         res.setHeader('Content-Type', 'application/pdf');
         return res.status(200).send(Buffer.from(buffer));
