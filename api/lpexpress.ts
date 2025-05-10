@@ -54,6 +54,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const body = req.body
       console.log('📨 POST body:', body)
 
+if (body.action === 'createSenderAddress') {
+  console.log('🏢 Creating sender address:', body.sender)
+
+  const addressRes = await fetch(`${API_BASE}/api/v2/address`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body.sender),
+  })
+
+  const result = await addressRes.json()
+  console.log('✅ Sender address response:', result)
+  return res.status(addressRes.status).json(result)
+}
+
+      
       if (body.action === 'createParcel') {
         console.log('📦 Creating parcel:', body)
 
