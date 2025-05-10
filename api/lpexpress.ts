@@ -10,10 +10,8 @@ async function getAccessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })
-
   const tokenJson = await tokenRes.json()
   console.log('✅ Token response:', tokenJson)
-
   return tokenJson.access_token
 }
 
@@ -21,30 +19,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   try {
     console.log(`📥 Incoming ${req.method} request`)
-
     const token = await getAccessToken()
-    if (!token) {
-      console.error('❌ Failed to retrieve token')
-      return res.status(500).json({ error: 'Failed to get access token' })
-    }
+    if (!token) return res.status(500).json({ error: 'Failed to get access token' })
 
     if (req.method === 'GET') {
       console.log('📦 Fetching LP Express terminals...')
       const terminalsRes = await fetch(`${API_BASE}/api/v2/terminal?receiverCountryCode=LT`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-
       if (!terminalsRes.ok) {
         const error = await terminalsRes.text()
         console.error('❌ Terminal fetch failed:', error)
         return res.status(500).json({ error: 'Failed to fetch terminals' })
       }
-
       const terminals = await terminalsRes.json()
       console.log('✅ Terminals fetched:', terminals.length, 'results')
       return res.status(200).json(terminals)
@@ -54,60 +45,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const body = req.body
       console.log('📨 POST body:', body)
 
-if (body.action === 'createSenderAddress') {
-  console.log('🏢 Creating sender address:', body.sender)
+      if (body.action === 'createSenderAddress') {
+        console.log('🏢 Creating sender address:', body.sender)
+        const addressRes = await fetch(`${API_BASE}/api/v2/address`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body.sender),
+        })
+        const addressResult = await addressRes.json()
+        console.log('✅ Sender address response:', addressResult)
+        return res.status(addressRes.status).json(addressResult)
+      }
 
-  const addressRes = await fetch(`${API_BASE}/api/v2/address`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body.sender),
-  })
-
-  const result = await addressRes.json()
-  console.log('✅ Sender address response:', result)
-  return res.status(addressRes.status).json(result)
-}
-
-      
       if (body.action === 'createParcel') {
         console.log('📦 Creating parcel:', body)
-
         const parcelRes = await fetch(`${API_BASE}/api/v2/parcel`, {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    idRef: body.idRef,
-    plan: body.plan,
-    parcel: body.parcel,
-    receiver: body.receiver,
-    senderAddressId: body.senderAddressId,
-  }),
-})
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            idRef: body.idRef,
+            plan: body.plan,
+            parcel: body.parcel,
+            receiver: body.receiver,
+            senderAddressId: body.senderAddressId,
+          }),
+        })
 
-const result = await parcelRes.json()
+        const parcelResult = await parcelRes.json()
+        if (!parcelRes.ok) {
+          console.error('❌ Parcel creation failed:', parcelResult)
+          return res.status(parcelRes.status).json({ error: 'Parcel creation failed', details: parcelResult })
+        }
 
-if (!parcelRes.ok) {
-  console.error('❌ Parcel creation failed:', result)
-  return res.status(parcelRes.status).json({ error: 'Parcel creation failed', details: result })
-}
-
-console.log('✅ Parcel creation response:', result)
-return res.status(parcelRes.status).json(result)
-
-        const result = await parcelRes.json()
-        console.log('✅ Parcel creation response:', result)
-        return res.status(parcelRes.status).json(result)
+        console.log('✅ Parcel creation response:', parcelResult)
+        return res.status(parcelRes.status).json(parcelResult)
       }
 
       if (body.action === 'initiateShipping') {
         console.log('🚚 Initiating shipping for:', body.orderId)
-
         const shipRes = await fetch(`${API_BASE}/api/v2/shipping/initiate`, {
           method: 'POST',
           headers: {
@@ -116,7 +97,6 @@ return res.status(parcelRes.status).json(result)
           },
           body: JSON.stringify({ idRefs: [body.orderId] }),
         })
-
         const result = await shipRes.json()
         console.log('✅ Shipping initiation response:', result)
         return res.status(shipRes.status).json(result)
@@ -124,7 +104,6 @@ return res.status(parcelRes.status).json(result)
 
       if (body.action === 'getShippingLabel') {
         console.log('🧾 Fetching label for:', body.orderId)
-
         const labelRes = await fetch(`${API_BASE}/api/v2/sticker/pdf?idRefs=${body.orderId}&layout=LAYOUT_10x15`, {
           method: 'GET',
           headers: { Authorization: `Bearer ${token}` },
